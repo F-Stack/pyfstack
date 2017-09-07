@@ -1,0 +1,7 @@
+include readme.md
+include fstack_cffi/fstack_cdef.h
+include fstack_cffi/fstack_source.c
+include fstack_cffi/fstack_build.py
+include cfstack/dpdk/x86_64-native-linuxapp-gcc/lib/*.a
+include cfstack/lib/libfstack.a
+include cfstack/lib/*.h
