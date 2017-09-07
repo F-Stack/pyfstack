@@ -14,8 +14,8 @@ from ._fstack import ffi, lib
 
 @ffi.def_extern()
 def loop_func(c_arg):
-    fn, arg = ffi.from_handle(c_arg)
-    res = fn(arg)
+    fn, args, kwargs = ffi.from_handle(c_arg)
+    res = fn(*args, **kwargs)
     return res if isinstance(res, integer_types) else 0
 
 
@@ -33,9 +33,9 @@ class Fstack(object):
         c_argv = ffi.new("char *[]", argv_keepalive)
         lib.ff_init(argc, c_argv)
 
-    def run(self, fn, arg):
+    def run(self, fn, *args, **kwargs):
         assert self.user_data is None
-        self.user_data = ffi.new_handle((fn, arg))
+        self.user_data = ffi.new_handle((fn, args, kwargs))
         return lib.ff_run(lib.loop_func, self.user_data)
 
 
