@@ -64,7 +64,7 @@ class KqueueServer(object):
         sock.bind(address)
         sock.listen(1)
         # sock.setblocking(0)
-        kev = socket.kevent(sock.fileno())
+        kev = select.kevent(sock.fileno())
         kqobj.control([kev], 0)
 
         self.kqobj = kqobj
@@ -93,7 +93,7 @@ class KqueueServer(object):
                 print("accept connection (%s:%s)" % (address[0], address[1]))
                 # conn.setblocking(0)
 
-                kev = socket.kevent(conn.fileno())
+                kev = select.kevent(conn.fileno())
                 kqobj.control([kev], 0)
                 connections[conn.fileno()] = conn
             elif ev.filter == select.KQ_FILTER_READ:
