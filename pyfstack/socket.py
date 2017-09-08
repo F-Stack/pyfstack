@@ -170,15 +170,22 @@ class socket(object):
 
     def getsockopt(self, level, optname, buflen=None):
         if buflen is None:
+            is_int = True
             buflen = 4
             optval = ffi.new("int*")
         else:
+            is_int = False
             optval = ffi.new("char[]", buflen)
         optlen = ffi.new("socklen_t*", buflen)
         ret = lib.ff_getsockopt(self.fd, level, optname, optval, optlen)
         if ret < 0:
             raise error("getsockopt: ")
-        return optval[0] if buflen == 4 else ffi.string(optval)
+
+        if is_int:
+            return optval[0]
+        else:
+            buf = ffi.buffer(optval)
+            return bytes(buf)
 
     def listen(self, backlog=-1):
         if backlog < 0:
