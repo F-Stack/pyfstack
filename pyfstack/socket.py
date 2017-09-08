@@ -10,259 +10,35 @@ from __future__ import print_function, division, absolute_import
 import os
 import errno
 import socket as _socket
-from socket import ntohl, ntohs, htonl, htons
 import struct
 
+from ._util import copy_globals
 from ._compat import integer_types, binary_type
 from ._fstack import ffi, lib
 
 
-__constant_name = [
-    'AF_APPLETALK',
-    'AF_ASH',
-    'AF_ATMPVC',
-    'AF_ATMSVC',
-    'AF_AX25',
-    'AF_BLUETOOTH',
-    'AF_BRIDGE',
-    'AF_DECnet',
-    'AF_ECONET',
-    'AF_INET',
-    'AF_INET6',
-    'AF_IPX',
-    'AF_IRDA',
-    'AF_KEY',
-    'AF_LLC',
-    'AF_NETBEUI',
-    'AF_NETLINK',
-    'AF_NETROM',
-    'AF_PACKET',
-    'AF_PPPOX',
-    'AF_ROSE',
-    'AF_ROUTE',
-    'AF_SECURITY',
-    'AF_SNA',
-    'AF_TIPC',
-    'AF_UNIX',
-    'AF_UNSPEC',
-    'AF_WANPIPE',
-    'AF_X25',
-    'AI_ADDRCONFIG',
-    'AI_ALL',
-    'AI_CANONNAME',
-    'AI_NUMERICHOST',
-    'AI_NUMERICSERV',
-    'AI_PASSIVE',
-    'AI_V4MAPPED',
-    'BDADDR_ANY',
-    'BDADDR_LOCAL',
-    'BTPROTO_HCI',
-    'BTPROTO_L2CAP',
-    'BTPROTO_RFCOMM',
-    'BTPROTO_SCO',
-    'CAPI',
-    'EAI_ADDRFAMILY',
-    'EAI_AGAIN',
-    'EAI_BADFLAGS',
-    'EAI_FAIL',
-    'EAI_FAMILY',
-    'EAI_MEMORY',
-    'EAI_NODATA',
-    'EAI_NONAME',
-    'EAI_OVERFLOW',
-    'EAI_SERVICE',
-    'EAI_SOCKTYPE',
-    'EAI_SYSTEM',
-    'EBADF',
-    'EINTR',
-    'HCI_DATA_DIR',
-    'HCI_FILTER',
-    'HCI_TIME_STAMP',
-    'INADDR_ALLHOSTS_GROUP',
-    'INADDR_ANY',
-    'INADDR_BROADCAST',
-    'INADDR_LOOPBACK',
-    'INADDR_MAX_LOCAL_GROUP',
-    'INADDR_NONE',
-    'INADDR_UNSPEC_GROUP',
-    'IPPORT_RESERVED',
-    'IPPORT_USERRESERVED',
-    'IPPROTO_AH',
-    'IPPROTO_DSTOPTS',
-    'IPPROTO_EGP',
-    'IPPROTO_ESP',
-    'IPPROTO_FRAGMENT',
-    'IPPROTO_GRE',
-    'IPPROTO_HOPOPTS',
-    'IPPROTO_ICMP',
-    'IPPROTO_ICMPV6',
-    'IPPROTO_IDP',
-    'IPPROTO_IGMP',
-    'IPPROTO_IP',
-    'IPPROTO_IPIP',
-    'IPPROTO_IPV6',
-    'IPPROTO_NONE',
-    'IPPROTO_PIM',
-    'IPPROTO_PUP',
-    'IPPROTO_RAW',
-    'IPPROTO_ROUTING',
-    'IPPROTO_RSVP',
-    'IPPROTO_TCP',
-    'IPPROTO_TP',
-    'IPPROTO_UDP',
-    'IPV6_CHECKSUM',
-    'IPV6_DSTOPTS',
-    'IPV6_HOPLIMIT',
-    'IPV6_HOPOPTS',
-    'IPV6_JOIN_GROUP',
-    'IPV6_LEAVE_GROUP',
-    'IPV6_MULTICAST_HOPS',
-    'IPV6_MULTICAST_IF',
-    'IPV6_MULTICAST_LOOP',
-    'IPV6_NEXTHOP',
-    'IPV6_PKTINFO',
-    'IPV6_RECVDSTOPTS',
-    'IPV6_RECVHOPLIMIT',
-    'IPV6_RECVHOPOPTS',
-    'IPV6_RECVPKTINFO',
-    'IPV6_RECVRTHDR',
-    'IPV6_RECVTCLASS',
-    'IPV6_RTHDR',
-    'IPV6_RTHDRDSTOPTS',
-    'IPV6_RTHDR_TYPE_0',
-    'IPV6_TCLASS',
-    'IPV6_UNICAST_HOPS',
-    'IPV6_V6ONLY',
-    'IP_ADD_MEMBERSHIP',
-    'IP_DEFAULT_MULTICAST_LOOP',
-    'IP_DEFAULT_MULTICAST_TTL',
-    'IP_DROP_MEMBERSHIP',
-    'IP_HDRINCL',
-    'IP_MAX_MEMBERSHIPS',
-    'IP_MULTICAST_IF',
-    'IP_MULTICAST_LOOP',
-    'IP_MULTICAST_TTL',
-    'IP_OPTIONS',
-    'IP_RECVOPTS',
-    'IP_RECVRETOPTS',
-    'IP_RETOPTS',
-    'IP_TOS',
-    'IP_TTL',
-    'MSG_CTRUNC',
-    'MSG_DONTROUTE',
-    'MSG_DONTWAIT',
-    'MSG_EOR',
-    'MSG_OOB',
-    'MSG_PEEK',
-    'MSG_TRUNC',
-    'MSG_WAITALL',
-    'MethodType',
-    'NETLINK_DNRTMSG',
-    'NETLINK_FIREWALL',
-    'NETLINK_IP6_FW',
-    'NETLINK_NFLOG',
-    'NETLINK_ROUTE',
-    'NETLINK_USERSOCK',
-    'NETLINK_XFRM',
-    'NI_DGRAM',
-    'NI_MAXHOST',
-    'NI_MAXSERV',
-    'NI_NAMEREQD',
-    'NI_NOFQDN',
-    'NI_NUMERICHOST',
-    'NI_NUMERICSERV',
-    'PACKET_BROADCAST',
-    'PACKET_FASTROUTE',
-    'PACKET_HOST',
-    'PACKET_LOOPBACK',
-    'PACKET_MULTICAST',
-    'PACKET_OTHERHOST',
-    'PACKET_OUTGOING',
-    'PF_PACKET',
-    'RAND_add',
-    'RAND_egd',
-    'RAND_status',
-    'SHUT_RD',
-    'SHUT_RDWR',
-    'SHUT_WR',
-    'SOCK_DGRAM',
-    'SOCK_RAW',
-    'SOCK_RDM',
-    'SOCK_SEQPACKET',
-    'SOCK_STREAM',
-    'SOL_HCI',
-    'SOL_IP',
-    'SOL_SOCKET',
-    'SOL_TCP',
-    'SOL_TIPC',
-    'SOL_UDP',
-    'SOMAXCONN',
-    'SO_ACCEPTCONN',
-    'SO_BROADCAST',
-    'SO_DEBUG',
-    'SO_DONTROUTE',
-    'SO_ERROR',
-    'SO_KEEPALIVE',
-    'SO_LINGER',
-    'SO_OOBINLINE',
-    'SO_RCVBUF',
-    'SO_RCVLOWAT',
-    'SO_RCVTIMEO',
-    'SO_REUSEADDR',
-    'SO_REUSEPORT',
-    'SO_SNDBUF',
-    'SO_SNDLOWAT',
-    'SO_SNDTIMEO',
-    'SO_TYPE',
-    'SSL_ERROR_EOF',
-    'SSL_ERROR_INVALID_ERROR_CODE',
-    'SSL_ERROR_SSL',
-    'SSL_ERROR_SYSCALL',
-    'SSL_ERROR_WANT_CONNECT',
-    'SSL_ERROR_WANT_READ',
-    'SSL_ERROR_WANT_WRITE',
-    'SSL_ERROR_WANT_X509_LOOKUP',
-    'SSL_ERROR_ZERO_RETURN',
-    'TCP_CORK',
-    'TCP_DEFER_ACCEPT',
-    'TCP_INFO',
-    'TCP_KEEPCNT',
-    'TCP_KEEPIDLE',
-    'TCP_KEEPINTVL',
-    'TCP_LINGER2',
-    'TCP_MAXSEG',
-    'TCP_NODELAY',
-    'TCP_QUICKACK',
-    'TCP_SYNCNT',
-    'TCP_WINDOW_CLAMP',
-    'TIPC_ADDR_ID',
-    'TIPC_ADDR_NAME',
-    'TIPC_ADDR_NAMESEQ',
-    'TIPC_CFG_SRV',
-    'TIPC_CLUSTER_SCOPE',
-    'TIPC_CONN_TIMEOUT',
-    'TIPC_CRITICAL_IMPORTANCE',
-    'TIPC_DEST_DROPPABLE',
-    'TIPC_HIGH_IMPORTANCE',
-    'TIPC_IMPORTANCE',
-    'TIPC_LOW_IMPORTANCE',
-    'TIPC_MEDIUM_IMPORTANCE',
-    'TIPC_NODE_SCOPE',
-    'TIPC_PUBLISHED',
-    'TIPC_SRC_DROPPABLE',
-    'TIPC_SUBSCR_TIMEOUT',
-    'TIPC_SUB_CANCEL',
-    'TIPC_SUB_PORTS',
-    'TIPC_SUB_SERVICE',
-    'TIPC_TOP_SRV',
-    'TIPC_WAIT_FOREVER',
-    'TIPC_WITHDRAWN',
-    'TIPC_ZONE_SCOPE',
-]
+# import attributes from builtin socket module
+def __key_check_fn(k):
+    includes = (
+        'ntohl',
+        'ntohs',
+        'htonl',
+        'htons',
+        'inet_aton',
+        'inet_ntoa',
+        'inet_pton',
+        'inet_ntop',
+    )
+    if k in includes:
+        return True
+    if k.isupper():
+        return True
+    return False
 
 
-for name in __constant_name:
-    globals()[name] = getattr(_socket, name)
+copy_globals(_socket, globals(),
+             ignore_missing_names=True,
+             key_check_fn=__key_check_fn)
 
 
 class error(IOError):
@@ -290,7 +66,7 @@ def _gen_sockaddr(af, address):
         assert len(ip) == 16
         addr = ffi.new("struct sockaddr_in6*")
         addrlen = ffi.sizeof("struct sockaddr_in6")
-        c_ip = ffi.new("char[4]", ip)
+        c_ip = ffi.new("char[16]", ip)
         lib.py_init_ipv6_addr(port, c_ip, addr)
     else:
         raise ValueError("unsupport family.")
@@ -355,11 +131,11 @@ def _gen_anc_buf(anc_list):
         if socklen_size == 4:
             totallen = 12 + len(cmsg_data)
             bb = struct.pack("=iii", totallen, cmsg_level, cmsg_type)
-            res.append(bb+cmsg_data)
+            res.append(bb + cmsg_data)
         elif socklen_size == 8:
             totallen = 16 + len(cmsg_data)
             bb = struct.pack("=iii", totallen, cmsg_level, cmsg_type)
-            res.append(bb+cmsg_data)
+            res.append(bb + cmsg_data)
     return b''.join(res)
 
 
@@ -553,7 +329,8 @@ class socket(object):
             flags = args[0]
             address = args[1]
         else:
-            raise TypeError("sendto takes at most 3 arguments (%d given)" % len(args)+1)
+            raise TypeError("sendto takes at most 3 arguments(%d given)" %
+                            (len(args) + 1))
         addr, addrlen = _gen_sockaddr(self.family, address)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
         n = lib.ff_send(self.fd, data, len(data), flags, sockaddr, addrlen)

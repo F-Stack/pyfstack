@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-internal gevent utilities, not for external use.
+internal utilities, not for external use.
 """
 
 from __future__ import print_function, absolute_import, division
@@ -19,15 +19,19 @@ class _NONE(object):
     def __repr__(self):
         return '<default value>'
 
+
 _NONE = _NONE()
+
 
 def copy_globals(source,
                  globs,
                  only_names=None,
                  ignore_missing_names=False,
                  names_to_ignore=(),
-                 dunder_names_to_keep=('__implements__', '__all__', '__imports__'),
-                 cleanup_globs=True):
+                 names_to_include=(),
+                 dunder_names_to_keep=('__all__', '__imports__'),
+                 cleanup_globs=True,
+                 key_check_fn=None):
     """
     Copy attributes defined in `source.__dict__` to the dictionary in globs
     (which should be the caller's globals()).
@@ -37,8 +41,8 @@ def copy_globals(source,
     also ignored.
 
     If *only_names* is given, only those attributes will be considered.
-    In this case, *ignore_missing_names* says whether or not to raise an AttributeError
-    if one of those names can't be found.
+    In this case, *ignore_missing_names* says whether or not to raise an
+    AttributeError if one of those names can't be found.
 
     If cleanup_globs has a true value, then common things imported but not used
     at runtime are removed, including this function.
@@ -60,6 +64,10 @@ def copy_globals(source,
         if key in names_to_ignore:
             continue
         if key.startswith("__") and key not in dunder_names_to_keep:
+            continue
+        if key_check_fn and \
+           key_check_fn(key) is False and \
+           key not in names_to_include:
             continue
         globs[key] = value
         copied.append(key)

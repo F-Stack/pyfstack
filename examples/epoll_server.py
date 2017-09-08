@@ -103,7 +103,7 @@ class EpollServer(object):
                         epobj.unregister(fileno)
                         connections[fileno].close()
                         del connections[fileno]
-		else:
+                else:
                     raise Exception()
 
 def parse_cmd_args():

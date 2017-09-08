@@ -7,43 +7,43 @@
 from __future__ import print_function, division, absolute_import
 import math
 from collections import defaultdict
-import select as _select
+# import select as _select
 
 from ._compat import integer_types
 from ._fstack import ffi, lib
 
 
-EPOLLERR      = lib.EPOLLERR
-EPOLLET       = lib.EPOLLET
-EPOLLHUP      = lib.EPOLLHUP
-EPOLLIN       = lib.EPOLLIN
-EPOLLMSG      = lib.EPOLLMSG
-EPOLLONESHOT  = lib.EPOLLONESHOT
-EPOLLOUT      = lib.EPOLLOUT
-EPOLLPRI      = lib.EPOLLPRI
-EPOLLRDBAND   = lib.EPOLLRDBAND
-EPOLLRDNORM   = lib.EPOLLRDNORM
-EPOLLWRBAND   = lib.EPOLLWRBAND
-EPOLLWRNORM   = lib.EPOLLWRNORM
+EPOLLERR = lib.EPOLLERR
+EPOLLET = lib.EPOLLET
+EPOLLHUP = lib.EPOLLHUP
+EPOLLIN = lib.EPOLLIN
+EPOLLMSG = lib.EPOLLMSG
+EPOLLONESHOT = lib.EPOLLONESHOT
+EPOLLOUT = lib.EPOLLOUT
+EPOLLPRI = lib.EPOLLPRI
+EPOLLRDBAND = lib.EPOLLRDBAND
+EPOLLRDNORM = lib.EPOLLRDNORM
+EPOLLWRBAND = lib.EPOLLWRBAND
+EPOLLWRNORM = lib.EPOLLWRNORM
 # EPOLL_CLOEXEC = _select.EPOLL_CLOEXEC
-PIPE_BUF      = lib.PIPE_BUF
-POLLERR       = lib.POLLERR
-POLLHUP       = lib.POLLHUP
-POLLIN        = lib.POLLIN
-POLLMSG       = lib.POLLMSG
-POLLNVAL      = lib.POLLNVAL
-POLLOUT       = lib.POLLOUT
-POLLPRI       = lib.POLLPRI
-POLLRDBAND    = lib.POLLRDBAND
-POLLRDNORM    = lib.POLLRDNORM
-POLLWRBAND    = lib.POLLWRBAND
-POLLWRNORM    = lib.POLLWRNORM
+PIPE_BUF = lib.PIPE_BUF
+POLLERR = lib.POLLERR
+POLLHUP = lib.POLLHUP
+POLLIN = lib.POLLIN
+POLLMSG = lib.POLLMSG
+POLLNVAL = lib.POLLNVAL
+POLLOUT = lib.POLLOUT
+POLLPRI = lib.POLLPRI
+POLLRDBAND = lib.POLLRDBAND
+POLLRDNORM = lib.POLLRDNORM
+POLLWRBAND = lib.POLLWRBAND
+POLLWRNORM = lib.POLLWRNORM
 
 # fliters
 KQ_FILTER_READ = lib.EVFILT_READ
-KQ_FILTER_WRITE	= lib.EVFILT_WRITE
+KQ_FILTER_WRITE = lib.EVFILT_WRITE
 KQ_FILTER_AIO = lib.EVFILT_AIO
-KQ_FILTER_VNODE	= lib.EVFILT_VNODE
+KQ_FILTER_VNODE = lib.EVFILT_VNODE
 KQ_FILTER_PROC = lib.EVFILT_PROC
 # KQ_FILTER_NETDEV = lib.EVFILT_NETDEV
 KQ_FILTER_SIGNAL = lib.EVFILT_SIGNAL
@@ -66,22 +66,22 @@ KQ_NOTE_LOWAT = lib.NOTE_LOWAT
 
 
 NOTE_DELETE = lib.NOTE_DELETE
-NOTE_WRITE  = lib.NOTE_WRITE
+NOTE_WRITE = lib.NOTE_WRITE
 NOTE_EXTEND = lib.NOTE_EXTEND
 NOTE_ATTRIB = lib.NOTE_ATTRIB
-NOTE_LINK   = lib.NOTE_LINK
+NOTE_LINK = lib.NOTE_LINK
 NOTE_RENAME = lib.NOTE_RENAME
 NOTE_REVOKE = lib.NOTE_REVOKE
 
 
-NOTE_EXIT       = lib.NOTE_EXIT
-NOTE_FORK       = lib.NOTE_FORK
-NOTE_EXEC       = lib.NOTE_EXEC
-NOTE_PCTRLMASK  = lib.NOTE_PCTRLMASK
-NOTE_PDATAMASK  = lib.NOTE_PDATAMASK
-NOTE_TRACK      = lib.NOTE_TRACK
-NOTE_TRACKERR   = lib.NOTE_TRACKERR
-NOTE_CHILD      = lib.NOTE_CHILD
+NOTE_EXIT = lib.NOTE_EXIT
+NOTE_FORK = lib.NOTE_FORK
+NOTE_EXEC = lib.NOTE_EXEC
+NOTE_PCTRLMASK = lib.NOTE_PCTRLMASK
+NOTE_PDATAMASK = lib.NOTE_PDATAMASK
+NOTE_TRACK = lib.NOTE_TRACK
+NOTE_TRACKERR = lib.NOTE_TRACKERR
+NOTE_CHILD = lib.NOTE_CHILD
 
 
 class error(Exception):
@@ -116,7 +116,8 @@ def select(rlist, wlist, xlist, timeout=None):
         tvp = ffi.NULL
     else:
         t1, t2 = math.modf(timeout)
-        tvp = ffi.new("struct timeval*", {"tv_sec":t1, "tv_usec":int(t2*1000)})
+        tv = {"tv_sec": t1, "tv_usec": int(t2*1000)}
+        tvp = ffi.new("struct timeval*", tv)
     ret = lib.ff_select(maxfd1, rfdset, wfdset, xfdset, tvp)
     if ret < 0:
         raise error("select: ")
@@ -196,7 +197,8 @@ class epoll(object):
         if maxevents != self.maxevents:
             self.events = ffi.new("struct epoll_event[]", maxevents)
             self.maxevents = maxevents
-        nfds = lib.ff_epoll_wait(self.epfd, self.events, self.maxevents, timeout)
+        nfds = lib.ff_epoll_wait(self.epfd, self.events,
+                                 self.maxevents, timeout)
         if nfds < 0:
             raise error("poll: ")
         res = []

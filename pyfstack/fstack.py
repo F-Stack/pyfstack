@@ -6,9 +6,8 @@
 """
 from __future__ import print_function, division, absolute_import
 import sys
-import os
 
-from ._compat import integer_types, binary_type
+from ._compat import integer_types
 from ._fstack import ffi, lib
 
 

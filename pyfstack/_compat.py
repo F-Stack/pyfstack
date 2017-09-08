@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# flake8: noqa
 """
 internal python 2/python 3 bridges. Not for external use.
 """

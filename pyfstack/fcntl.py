@@ -25,7 +25,7 @@ def fcntl(fd, cmd, arg=0):
         sz = len(arg)
         if sz > 1024:
             raise ValueError("fcntl string arg too long")
-        c_arg = ffi.new("char[%d]"%len(arg), arg)
+        c_arg = ffi.new("char[%d]" % len(arg), arg)
     else:
         raise ValueError("need integer or bytes")
     res = lib.ff_fcntl(fd, cmd, c_arg)
@@ -50,7 +50,7 @@ def ioctl(fd, request, arg=0, mutable_flag=True):
         sz = len(arg)
         if sz > 1024:
             raise ValueError("fcntl string arg too long")
-        c_arg = ffi.new("char[%d]"%len(arg), arg)
+        c_arg = ffi.new("char[%d]" % len(arg), arg)
 
         res = lib.ff_ioctl(fd, request, c_arg)
         if res < 0:
