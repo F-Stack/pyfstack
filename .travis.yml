@@ -1,27 +1,30 @@
 language: python
 cache:
-    directories:
-        $HOME/.cache/pip
-sudo: false
-addons:
-    apt:
-        packages:
-            - build-essential
-            - git
+  directories:
+    $HOME/.cache/pip
+# sudo: false
+# addons:
+#   apt:
+#     packages:
 matrix:
-    include:
-        - python: 2.7
-          env: TOX_ENV=py27
-        - python: 3.5
-          env: TOX_ENV=py35
-        - python: 3.6
-          env: TOX_ENV=py36
-        # - python: pypy
-        #   env: TOX_ENV=pypy
-        - python: 3.5
-          env: TOX_ENV=flake8
+  include:
+    - python: 2.7
+      env: TOX_ENV=py27
+    - python: 3.5
+      env: TOX_ENV=py35
+    - python: 3.6
+      env: TOX_ENV=py36
+    # - python: pypy
+    #   env: TOX_ENV=pypy
+    - python: 3.5
+      env: TOX_ENV=flake8
+
+before_install:
+  - sudo apt-get install -y coreutils build-essential git
+  - sudo apt-get install -y linux-headers-`uname -r`
+
 install:
-    - pip install -U pip
-    - pip install tox
+  - pip install -U pip
+  - pip install tox
 script:
-    - tox -e $TOX_ENV
+  - tox -e $TOX_ENV
