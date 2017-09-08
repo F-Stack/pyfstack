@@ -52,9 +52,10 @@ int py_sendmsg(int fd, char* buffers[], int lenarr[], int nbuffers,
                int flags, struct linux_sockaddr *addr, int addrlen)
 {
     int res;
+    int i;
     struct msghdr msg = {0};
     struct iovec iov[nbuffers];
-    for (int i = 0; i < nbuffers; ++i) {
+    for (i = 0; i < nbuffers; ++i) {
         iov[i].iov_base  = buffers[i];
         iov[i].iov_len = lenarr[i];
     }
