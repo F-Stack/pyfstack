@@ -26,5 +26,6 @@ before_install:
 install:
   - pip install -U pip
   - pip install tox
+  - pip install cffi
 script:
   - tox -e $TOX_ENV
