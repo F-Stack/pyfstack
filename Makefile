@@ -4,19 +4,21 @@
 #       Created:  2017-09-02 Sat 11:19
 #==========================================================================
 FF_DPDK_TARGET ?= x86_64-native-linuxapp-gcc
+CFSTACK_DEP = cfstack/.gitignore
+
 all: dpdk fstack
 
-dpdk: cfstack
+dpdk: CFSTACK_DEP
 	cd cfstack/dpdk && make install T=$(FF_DPDK_TARGET) CONFIG_RTE_BUILD_COMBINE_LIBS=y EXTRA_CFLAGS="-fPIC" -j 4
 
 .PHONY: dpdk
 
-fstack: cfstack
+fstack: CFSTACK_DEP
 	cd cfstack/lib && make CONF_CFLAGS="-fPIC"
 
 .PHONY: fstack
 
-cfstack:
+CFSTACK_DEP:
 	git submodule update --init
 
 clean:
