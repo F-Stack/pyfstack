@@ -82,14 +82,15 @@ def _gen_empty_sockaddr(af):
         sz = ffi.sizeof("struct sockaddr_in6")
     else:
         raise ValueError("unsupport family.")
-    addrlen = ffi.new("socklen_t*", sz)
-    return addr, addrlen
+    addrlenp = ffi.new("socklen_t*", sz)
+    return addr, addrlenp
 
 
-def _parse_sockaddr(sockaddr, addrlen):
-    addrlen = addrlen[0]
+def _parse_sockaddr(sockaddr, addrlenp):
+    addrlen = addrlenp[0]
     af = sockaddr.sa_family
     if af == AF_INET:
+        assert addrlen == ffi.sizeof("struct sockaddr_in")
         addr = ffi.cast("struct sockaddr_in*", sockaddr)
         c_port = ffi.new("unsigned short*")
         c_ip = ffi.new("char[4]")
@@ -194,17 +195,17 @@ class socket(object):
             raise error("bind: ")
 
     def accept(self):
-        addr, addrlen = _gen_empty_sockaddr(AF_INET6)
+        addr, addrlen_p = _gen_empty_sockaddr(AF_INET6)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
         while True:
-            fd = lib.ff_accept(self.fd, sockaddr, addrlen)
+            fd = lib.ff_accept(self.fd, sockaddr, addrlen_p)
             if fd >= 0:
                 break
             if ffi.errno == errno.EINTR:
                 continue
             raise error("accept:")
         sock = socket(self.family, self.type, self.proto, fd)
-        address = _parse_sockaddr(sockaddr, addrlen)
+        address = _parse_sockaddr(sockaddr, addrlen_p)
         return sock, address
 
     def connect(self, address):
@@ -230,20 +231,20 @@ class socket(object):
             raise error("shutdown: ")
 
     def getpeername(self):
-        addr, addrlen = _gen_empty_sockaddr(AF_INET6)
+        addr, addrlen_p = _gen_empty_sockaddr(AF_INET6)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
-        ret = lib.ff_getpeername(self.fd, sockaddr, addrlen)
+        ret = lib.ff_getpeername(self.fd, sockaddr, addrlen_p)
         if ret < 0:
             raise error("getpeername: ")
-        return _parse_sockaddr(sockaddr, addrlen)
+        return _parse_sockaddr(sockaddr, addrlen_p)
 
     def getsockname(self):
-        addr, addrlen = _gen_empty_sockaddr(AF_INET6)
+        addr, addrlen_p = _gen_empty_sockaddr(AF_INET6)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
-        ret = lib.ff_getsockname(self.fd, sockaddr, addrlen)
+        ret = lib.ff_getsockname(self.fd, sockaddr, addrlen_p)
         if ret < 0:
             raise error("getsockname: ")
-        return _parse_sockaddr(sockaddr, addrlen)
+        return _parse_sockaddr(sockaddr, addrlen_p)
 
     def recv(self, bufsize, flags=0):
         if bufsize < 0:
@@ -267,15 +268,15 @@ class socket(object):
     def recvfrom(self, bufsize, flags=0):
         if bufsize < 0:
             raise ValueError("negative buffersize in recvfrom")
-        addr, addrlen = _gen_empty_sockaddr(AF_INET6)
+        addr, addrlen_p = _gen_empty_sockaddr(AF_INET6)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
         cbuf = ffi.new("char[]", bufsize)
 
-        n = lib.ff_recvfrom(self.fd, cbuf, bufsize, flags, sockaddr, addrlen)
+        n = lib.ff_recvfrom(self.fd, cbuf, bufsize, flags, sockaddr, addrlen_p)
         if n < 0:
             raise error("recvfrom: ")
         buf = ffi.buffer(cbuf, n)
-        address = _parse_sockaddr(sockaddr, addrlen)
+        address = _parse_sockaddr(sockaddr, addrlen_p)
         return bytes(buf), address
 
     def recvfrom_into(self, buf, nbytes=0, flags=0):
@@ -285,30 +286,30 @@ class socket(object):
         if nbytes < 0:
             raise ValueError("negative buffersize in recvfrom")
 
-        addr, addrlen = _gen_empty_sockaddr(AF_INET6)
+        addr, addrlen_p = _gen_empty_sockaddr(AF_INET6)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
 
-        n = lib.ff_recvfrom(self.fd, cbuf, nbytes, flags, sockaddr, addrlen)
+        n = lib.ff_recvfrom(self.fd, cbuf, nbytes, flags, sockaddr, addrlen_p)
         if n < 0:
             raise error("recvfrom: ")
-        address = _parse_sockaddr(sockaddr, addrlen)
+        address = _parse_sockaddr(sockaddr, addrlen_p)
         return n, address
 
     def recvmsg(self, bufsize, ancbufsize=0, flags=0):
         if bufsize < 0:
             raise ValueError("negative buffersize in recvfrom")
 
-        addr, addrlen = _gen_empty_sockaddr(AF_INET6)
+        addr, addrlen_p = _gen_empty_sockaddr(AF_INET6)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
         cbuf = ffi.new("char[]", bufsize)
         c_ancbuf = ffi.new("char[]", ancbufsize)
         c_ancbuf_len = ffi.new("int*", ancbufsize)
         c_flags = ffi.new("int*", flags)
         n = lib.py_recvmsg(self.fd, cbuf, bufsize, c_ancbuf,
-                           c_ancbuf_len, c_flags, sockaddr, addrlen)
+                           c_ancbuf_len, c_flags, sockaddr, addrlen_p)
         if n < 0:
             raise error("recvmsg:")
-        address = _parse_sockaddr(sockaddr, addrlen)
+        address = _parse_sockaddr(sockaddr, addrlen_p)
         flags = c_flags[0]
         buf = ffi.buffer(cbuf, n)
         ancbuf = ffi.buffer(c_ancbuf, c_ancbuf_len[0])
