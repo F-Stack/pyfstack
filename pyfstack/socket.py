@@ -41,6 +41,15 @@ copy_globals(_socket, globals(),
              key_check_fn=__key_check_fn)
 
 
+def retry_intr(fn, *args, **kwargs):
+    while True:
+        res = fn(*args, **kwargs)
+        if res < 0 and ffi.errno == errno.EINTR:
+            continue
+        break
+    return res
+
+
 class error(IOError):
     def __init__(self, prefix):
         self.prefix = prefix
@@ -206,12 +215,8 @@ class socket(object):
     def accept(self):
         addr, addrlen_p = _gen_empty_sockaddr(AF_INET6)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
-        while True:
-            fd = lib.ff_accept(self.fd, sockaddr, addrlen_p)
-            if fd >= 0:
-                break
-            if ffi.errno == errno.EINTR:
-                continue
+        fd = retry_intr(lib.ff_accept, self.fd, sockaddr, addrlen_p)
+        if fd < 0:
             raise error("accept:")
         sock = socket(self.family, self.type, self.proto, fd)
         address = _parse_sockaddr(sockaddr, addrlen_p)
@@ -259,7 +264,7 @@ class socket(object):
         if bufsize < 0:
             raise ValueError("negative buffersize in recv")
         cbuf = ffi.new("char[]", bufsize)
-        n = lib.ff_recv(self.fd, cbuf, bufsize, flags)
+        n = retry_intr(lib.ff_recv, self.fd, cbuf, bufsize, flags)
         if n < 0:
             raise error("recv: ")
         buf = ffi.buffer(cbuf, n)
@@ -269,7 +274,8 @@ class socket(object):
         if nbytes == 0:
             nbytes = len(buf)
         cbuf = ffi.from_buffer(buf)
-        n = lib.ff_recv(self.fd, cbuf, nbytes, flags)
+
+        n = retry_intr(lib.ff_recv, self.fd, cbuf, nbytes, flags)
         if n < 0:
             raise error("recv: ")
         return n
@@ -281,7 +287,8 @@ class socket(object):
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
         cbuf = ffi.new("char[]", bufsize)
 
-        n = lib.ff_recvfrom(self.fd, cbuf, bufsize, flags, sockaddr, addrlen_p)
+        n = retry_intr(lib.ff_recvfrom, self.fd, cbuf, bufsize,
+                       flags, sockaddr, addrlen_p)
         if n < 0:
             raise error("recvfrom: ")
         buf = ffi.buffer(cbuf, n)
@@ -298,7 +305,8 @@ class socket(object):
         addr, addrlen_p = _gen_empty_sockaddr(AF_INET6)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
 
-        n = lib.ff_recvfrom(self.fd, cbuf, nbytes, flags, sockaddr, addrlen_p)
+        n = retry_intr(lib.ff_recvfrom, self.fd, cbuf, nbytes,
+                       flags, sockaddr, addrlen_p)
         if n < 0:
             raise error("recvfrom: ")
         address = _parse_sockaddr(sockaddr, addrlen_p)
@@ -319,8 +327,8 @@ class socket(object):
             c_ancbuf = ffi.NULL
         c_ancbuf_len = ffi.new("int*", ancbufsize)
         c_flags = ffi.new("int*", flags)
-        n = lib.py_recvmsg(self.fd, cbuf, bufsize, c_ancbuf,
-                           c_ancbuf_len, c_flags, sockaddr, addrlen_p)
+        n = retry_intr(lib.py_recvmsg, self.fd, cbuf, bufsize, c_ancbuf,
+                       c_ancbuf_len, c_flags, sockaddr, addrlen_p)
         if n < 0:
             raise error("recvmsg:")
         address = _parse_sockaddr(sockaddr, addrlen_p)
@@ -331,7 +339,7 @@ class socket(object):
         return bytes(buf), ancdata, flags, address
 
     def send(self, data, flags=0):
-        n = lib.ff_send(self.fd, data, len(data), flags)
+        n = retry_intr(lib.ff_send, self.fd, data, len(data), flags)
         if n < 0:
             raise error("send: ")
         return n
@@ -348,7 +356,8 @@ class socket(object):
                             (len(args) + 1))
         addr, addrlen = _gen_sockaddr(self.family, address)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
-        n = lib.ff_send(self.fd, data, len(data), flags, sockaddr, addrlen)
+        n = retry_intr(lib.ff_send, self.fd, data, len(data),
+                       flags, sockaddr, addrlen)
         if n < 0:
             raise error("sendto: ")
         return n
@@ -366,8 +375,8 @@ class socket(object):
         else:
             addr, addrlen = _gen_sockaddr(self.family, address)
             sockaddr = ffi.cast("struct linux_sockaddr*", addr)
-        res = lib.py_sendmsg(self.fd, c_bufv, c_lenarr, nbuffers,
-                             c_ancbuf, len(ancbuf), flags, sockaddr, addrlen)
+        res = retry_intr(lib.py_sendmsg, self.fd, c_bufv, c_lenarr, nbuffers,
+                         c_ancbuf, len(ancbuf), flags, sockaddr, addrlen)
         if res < 0:
             raise error("sendmsg: ")
         return res
