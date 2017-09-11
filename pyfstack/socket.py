@@ -120,7 +120,7 @@ def _parse_anc_buf(buf, size):
             m_size, cmsg_level, cmsg_type = struct.unpack("=qii", start)
             cmsg_data = start[16:m_size]
         else:
-            raise RuntimeError
+            raise RuntimeError()
         res.append((cmsg_level, cmsg_type, cmsg_data))
     return res
 
@@ -137,6 +137,8 @@ def _gen_anc_buf(anc_list):
             totallen = 16 + len(cmsg_data)
             bb = struct.pack("=iii", totallen, cmsg_level, cmsg_type)
             res.append(bb + cmsg_data)
+        else:
+            raise RuntimeError()
     return b''.join(res)
 
 
@@ -184,7 +186,7 @@ class socket(object):
         if is_int:
             return optval[0]
         else:
-            buf = ffi.buffer(optval)
+            buf = ffi.buffer(optval, optlen[0])
             return bytes(buf)
 
     def listen(self, backlog=-1):
