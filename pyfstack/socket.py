@@ -305,11 +305,16 @@ class socket(object):
     def recvmsg(self, bufsize, ancbufsize=0, flags=0):
         if bufsize < 0:
             raise ValueError("negative buffersize in recvfrom")
+        if ancbufsize < 0:
+            raise ValueError("negative ancbufsize in recvfrom")
 
         addr, addrlen_p = _gen_empty_sockaddr(AF_INET6)
         sockaddr = ffi.cast("struct linux_sockaddr*", addr)
         cbuf = ffi.new("char[]", bufsize)
-        c_ancbuf = ffi.new("char[]", ancbufsize)
+        if ancbufsize > 0:
+            c_ancbuf = ffi.new("char[]", ancbufsize)
+        else:
+            c_ancbuf = ffi.NULL
         c_ancbuf_len = ffi.new("int*", ancbufsize)
         c_flags = ffi.new("int*", flags)
         n = lib.py_recvmsg(self.fd, cbuf, bufsize, c_ancbuf,
@@ -353,8 +358,12 @@ class socket(object):
         cbuf_list = [ffi.from_buffer(buf) for buf in buffers]
         c_bufv = ffi.new("char *[]", cbuf_list)
         c_lenarr = ffi.new("int[]", [len(buf) for buf in buffers])
-        addr, addrlen = _gen_sockaddr(self.family, address)
-        sockaddr = ffi.cast("struct linux_sockaddr*", addr)
+        if address is None:
+            sockaddr = ffi.NULL
+            addrlen = 0
+        else:
+            addr, addrlen = _gen_sockaddr(self.family, address)
+            sockaddr = ffi.cast("struct linux_sockaddr*", addr)
         res = lib.py_sendmsg(self.fd, c_bufv, c_lenarr, nbuffers,
                              c_ancbuf, len(ancbuf), flags, sockaddr, addrlen)
         if res < 0:
